@@ -1,0 +1,511 @@
+---
+title: "Introduccion a la Teoria de Grafos"
+output: html_document
+---
+
+### Inicialización
+A lo largo del siguiente curso utilizaremos fundamentalmente la librería iGraph 
+de R. <http://rmarkdown.rstudio.com>
+```{r}
+library(igraph)
+setwd("/Users/fernando_perez/Documents/05 Fernando/Mis Docs/Master IBM/R")
+````
+
+
+# 1. Introducción
+## Crear un grafo definiendo directamente sus Vértices y Enlaces
+
+Podemos definir un grafo como dos conjuntos (dafa.frames):  
+
+* Nodos
+* Enlaces
+
+Con la posibilidad de añadir propiedades adicionales. (p.e. población, 
+distancia, ...)
+
+```{r}
+cities <- data.frame(name = c("Almería", "Granada", "Jaén", "Madrid", "Málaga", "Murcia"),
+                     population = c(192070, 237540, 115837, 3165000, 566913, 439712))
+
+relations <- data.frame(from = c("Almería", "Almería", "Granada", "Jaén",   "Jaén",   "Madrid"),
+                        to   = c("Granada", "Murcia",  "Jaén",    "Madrid", "Málaga", "Murcia"),
+                        distance = c(92070, 237540, 115837, 3165000, 566913, 439712))
+
+g <- graph.data.frame(relations, directed=FALSE, vertices=cities)
+```
+
+Propiedades del grafo generado:
+
+```{r}
+print(g)
+get.vertex.attribute(g, name = "population")
+get.edge.attribute(g, name = "distance")
+get.edgelist(g)
+````
+
+Representación simple del grafo
+
+```{r}
+plot.igraph(g,
+     vertex.label = V(g)$name,
+     vertex.size = V(g)$population/10^5)
+````
+
+Una vez finalizado el trabajo de generación de un grafo, podemos exportarlo 
+para su utilización posterior, en multitud de formatos como:
+
+* edgelist
+* gml
+* graphml
+* pajek
+* ...
+
+mediante la sentencia:
+write.graph(graph = g,file = "./graph.gml", format  = "gml")
+
+
+## Crear un grafo a través de su matriz de adyacencia
+
+Podemos crear un grafo directamente a través de su matriz de adyancencia
+
+```{r}
+dat <- read.csv("./cities.csv", header=TRUE, row.names=1)
+mat <- as.matrix(dat)
+
+mat
+
+g <- graph.adjacency(mat, mode="undirected", weighted = NULL)
+print(g)
+````
+
+
+***La operacion inversa***
+
+Podemos recumerar los nodos y enlaces de un grafo y convertirlos en data frames 
+mediante
+
+```{r}
+get.data.frame(g, what="vertices")
+get.data.frame(g, what="edges")
+````
+
+
+## Caminos de longitud n entre 2 nodos
+
+Las sucesivas potencias de la matriz de adyacencia, proporcionan el número 
+cadenas que unen 2 nodos, de longitud equivalente a la correspondiente potencia
+
+Cadenas de longitud 2
+
+```{r echo=FALSE, fig.height=3}
+mat2 <- mat %*% mat
+mat2
+plot(g)
+```
+
+y Cadenas de longitud 3
+
+```{r echo=FALSE, fig.height=3}
+mat3 <- mat2 %*% mat
+mat3
+```
+
+
+## Árboles, Estrellas y Grafos completos
+
+```{r}
+g <- graph.tree(n = 20, children = 2, mode = "undirected")
+plot(g, main = "Árbol 20 nodos")
+
+g <- graph.star(n = 20, mode = "undirected")
+plot(g, main = "Estrella 20 nodos")
+
+g <- graph.full (n = 20, directed = FALSE, loops = FALSE)
+plot(g, main = "Grafo Completo 20 nodos")
+````
+
+
+# 2. Métricas y Medidas
+
+## Eigen Centrality
+
+Para demostrar la Eigen Centrality vamos a crear 2 estrellas
+
+```{r}
+g1 <- graph.star(n = 6, mode = "undirected")
+V(g1)$name <- (letters[1:6])
+
+g2 <- graph.star(n = 8, mode = "undirected")
+V(g2)$name <- (letters[7:14])
+````
+
+y las unimos por sus nodos centrales a través de un nuevo nodo "z"
+
+```{r}
+g3 <- g1 %u% g2
+g3 <- g3 + vertices("z")
+g3 <- add.edges(g3,
+        c(grep(V(g3)$name, pattern = "a"), grep(V(g3)$name, pattern = "z"),
+          grep(V(g3)$name, pattern = "g"), grep(V(g3)$name, pattern = "z")))
+plot(g3)
+````
+
+Obsérvese la diferencia entre las centralidades por Grado y Eigenvactor:
+
+```{r}
+par(mfrow = c(1, 2))
+#Plotear por grado
+V(g3)$degree <- degree(g3)
+
+l <- layout.kamada.kawai(g3)
+plot(g3, layout = l, 
+     vertex.label = V(g3)$degree,
+     vertex.label.dist=1.5,
+     main = "Grado")
+
+#Plotear por EigenVector
+V(g3)$evcent <- round(evcent(g3)$vector,3)
+
+plot(g3, layout = l, 
+     vertex.label = V(g3)$evcent,
+     vertex.label.dist=1.5,
+     main = "Eigenvector")
+
+par(mfrow = c(1, 1))
+````
+
+
+### Con el ejemplo de las ciudades
+
+**Eigenvector por matriz de adyacencia**
+
+Seleccionar el autovector de la matriz de adyacencia con el mayor autovalor
+con todos sus elementos >0 o <0
+
+```{r}
+dat <- read.csv("./cities.csv", header=TRUE, row.names=1)
+mat <- as.matrix(dat)
+
+eigen(mat)
+maxEigenVal <- which.max(eigen(mat)$values)
+cent1 <- eigen(mat)$vectors[,maxEigenVal]
+cent1
+````
+
+**Contrastamos con la centralidad obtenida con igraph**
+
+```{r}
+g <- graph.adjacency(mat, mode="undirected", weighted = NULL)
+V(g)$evcent <- evcent(g)$vector
+V(g)$evcent
+
+norm_vec <- function(x) sqrt(sum(x^2))
+
+normEv <- norm_vec(V(g)$evcent)
+cent2 <- V(g)$evcent / normEv
+
+cbind(cent1,cent2)
+
+plot(g, layout = layout.kamada.kawai, 
+     vertex.label = paste0(V(g)$name, ", ", round(V(g)$evcent, 3)),
+     vertex.label.dist=1)
+```
+
+
+## Bonacich
+
+A través de la función igraph **alpha.centrality**
+
+```{r}
+g <- graph( c(1,2,
+              1,3,
+              2,3,
+              3,4,
+              4,5,
+              5,6,
+              5,7,
+              6,7), directed = TRUE )
+
+V(g)$name <- letters[1:7]
+
+plot(g)
+```
+
+Calculamos 4 valores de alpha
+
+```{r}
+V(g)$alphac1 <- round(alpha.centrality(g,alpha=1,loops = FALSE),3)
+V(g)$alphac2 <- round(alpha.centrality(g,alpha=1/2),3)
+V(g)$alphac3 <- round(alpha.centrality(g,alpha=1/3),3)
+V(g)$alphac4 <- round(alpha.centrality(g,alpha=1/4),3)
+
+```
+
+```{r echo=FALSE}
+V(g)$label.cex = .75
+V(g)$label.color = "black"
+V(g)$color = "red"
+V(g)$edge.color="gray"
+
+l <- layout.fruchterman.reingold(g)
+
+par(mfrow = c(2, 2))
+
+plot(g, layout = l, 
+     xlab = "Alpha = 1",
+     vertex.label = paste(V(g)$name,V(g)$alphac1, sep = ","),
+     edge.arrow.size=0.2,
+     vertex.label.dist=1.5)
+
+plot(g, layout = l, 
+     xlab = "Alpha = 1/2",
+     vertex.label = paste(V(g)$name,V(g)$alphac2, sep = ","),
+     edge.arrow.size=0.2,
+     vertex.label.dist=2)
+
+plot(g, layout = l, 
+     xlab = "Alpha = 1/3",
+     vertex.label = paste(V(g)$name,V(g)$alphac3, sep = ","),
+     edge.arrow.size=0.2,
+     vertex.label.dist=2)
+
+plot(g, layout = l, 
+     xlab = "Alpha = 1/4",
+     vertex.label = paste(V(g)$name,V(g)$alphac4, sep = ","),
+     edge.arrow.size=0.2,
+     vertex.label.dist=2)
+
+par(mfrow = c(1, 1))
+```
+
+
+## PageRank
+
+A través de la función igraph **page.rank**
+
+```{r}
+g <- graph(n = 5, 
+           c(1,2,
+             1,3,
+             2,3,
+             4,5), directed = TRUE )
+
+V(g)$name <- letters[1:5]
+V(g)$pr <- round(page.rank(g, damping = 0.85)$vector, 4)
+
+plot(g, layout = layout.circle, 
+     xlab = "PageRank",
+     vertex.label = paste(V(g)$name,V(g)$pr, sep = ","),
+     edge.arrow.size=0.2,
+     vertex.label.dist=1)
+```
+
+
+## Closeness Centrality
+
+A través de la función igraph **closeness**
+Recuperamos el grafo anterior (eigenvector) y calculamos su *closeness* 
+centrality
+
+```{r}
+V(g3)$closeness <- closeness(g3)
+
+l <- layout.fruchterman.reingold(g3)
+plot(g3, layout=l, vertex.label = round(V(g3)$closeness,3),
+     vertex.label.dist=1)
+```
+
+
+## Betweenness
+
+A través de la función igraph **betweenness**
+
+```{r}
+V(g3)$betweennses <- betweenness(g3)
+
+l <- layout.fruchterman.reingold(g3)
+plot(g3, layout=l, vertex.label = round(V(g3)$betweennses,3),
+     vertex.label.dist=2)
+```
+
+
+# 3. Grupos de nodos
+
+## Distribuciones de grado
+
+Vamos a comparar la distribución de grado en 3 tipos de grafos completamente 
+diferentes, todos ellos con 100 nodos:  
+
+* Anillo, Todos los nodos con el mismo grado
+* Aleatorio con probabilidad del 10%
+* Red libre de escala
+
+```{r}
+n = 100
+g1 <- graph.ring(n)
+g2 <- erdos.renyi.game(n, 0.10)
+g3 <- barabasi.game(n)    
+
+deg1 <- degree(g1)
+deg2 <- degree(g2)
+deg3 <- degree(g3)
+```
+
+```{r echo=FALSE}
+par(mfrow = c(2, 3))
+
+plot(g1, vertex.label= NA, edge.arrow.size=0.002, vertex.size = 0.5, xlab = "Ring Network")
+plot(g2, vertex.label= NA, edge.arrow.size=0.002, vertex.size = 0.5, xlab = "Random Network p=0.10")
+plot(g3, vertex.label= NA, edge.arrow.size=0.002, vertex.size = 0.5, xlab = "Scale-free Network")
+hist(deg1, col=rgb(0,0,1,.4), xlim=c(0,20), xlab="degree", ylab="freq")
+hist(deg2, col=rgb(1,0,0,.4), xlim=c(0,20), xlab="degree", ylab="freq")
+hist(deg3, col=rgb(0,1,0,.4), xlim=c(0,20), xlab="degree", ylab="freq")
+
+par(mfrow = c(1, 1))
+```
+
+
+## Power Law
+
+A continuación revisamos las distribuciones Power Law, típicas en las redes 
+libres de escala, para lo cual generamos una red de este tipo 
+con `r n = 5000` `r n` nodos.
+
+```{r warning=FALSE}
+library("poweRlaw")
+
+g1 <- barabasi.game(n)
+deg1 <- degree(g1)
+
+#Crear la distribución
+m = displ$new(deg1)
+
+est = estimate_pars(m)
+m$setPars(est)
+
+m$pars
+```
+
+```{r echo=FALSE}
+par(mfrow = c(1, 2))
+
+#plot del histograma y Power Law
+hist(deg1, main = "Histogram")
+plot(m, main = "Power Law", xlab = "degree", ylab = "freq")
+lines(m, col=2, lwd=1)
+
+par(mfrow = c(1, 1))
+````
+
+```{r}
+degVal <- seq(1, max(deg1), by = 1)
+freqDeg <- cbind("k" = degVal,
+                 "freq" = unlist(lapply(degVal, function(x){ 
+                                                    length(which(deg1 == x)) / n
+                                                })),
+                 "count" = unlist(lapply(degVal, function(x){ 
+                                                    length(which(deg1 == x))
+                                                }))
+                 )
+
+head(freqDeg, 10)
+tail(freqDeg, 10)
+```
+
+***Cálculo de los momentos de la distribución***
+
+* Media
+
+```{r}
+m_ord1 <- sum(freqDeg[,1] * freqDeg[,2])
+m_ord1
+weighted.mean(x = freqDeg[,1], w = freqDeg[,3])
+```
+
+* Varianza
+
+```{r}
+m_ord2 <- sum(freqDeg[,1]^2 * freqDeg[,2])
+m_ord2
+weighted.mean(x = freqDeg[,1]^2, w = freqDeg[,3])
+```
+
+* Asimetría
+
+```{r}
+m_ord3 <- sum(freqDeg[,1]^3 * freqDeg[,2])
+m_ord3
+```
+
+
+# 4. Modelos de Grafos
+
+## Erdos Renyi
+
+Generación de una red aleatoria de `r n = 500` `r n` nodos, según el modelo 
+E-R de G(n,p) y observación de sus diferentes *momentos* en función de la 
+probabilidad de enlace.
+
+* 1/n^2:  la red tiene algunos enlace. Grado medio = 1/n
+* 1/n^(3/2): La red tiene un componente de al menos 3 enlaces. 
+Grado medio = 1/n^(1/2)
+* 1/n: La red tiene un ciclo, comienzo del componente gigante. Grado medio = 1
+* Log(n)/n. La red esta conectada. Grado medio = Log(n)
+
+```{r}
+p1 = 1/n^2 
+p2 = (1/n^(3/2))
+p3 = 1/n
+p4 = log(n)/n
+
+#Forzamos las probabilidades ligeramente
+p1 <- p1 * 1.10
+p2 <- p2 * 1.10
+p3 <- p3 * 1.10
+p4 <- p4 * 1.10
+
+er1 <- erdos.renyi.game(n, p1, type="gnp")
+er2 <- erdos.renyi.game(n, p2, type="gnp")
+er3 <- erdos.renyi.game(n, p3, type="gnp")
+er4 <- erdos.renyi.game(n, p4, type="gnp")
+
+deg1 <- degree(er1)
+deg2 <- degree(er2)
+deg3 <- degree(er3)
+deg4 <- degree(er4)
+
+```
+
+```{r echo=FALSE}
+par(mfrow = c(2, 4))
+
+plot(er1, main=paste0("p=",round(p1,digits = 4)), vertex.size = 1, vertex.label = NA)
+plot(er2, main=paste0("p=",round(p2,digits = 4)), vertex.size = 1, vertex.label = NA)
+plot(er3, main=paste0("p=",round(p3,digits = 4)), vertex.size = 1, vertex.label = NA)
+plot(er4, main=paste0("p=",round(p4,digits = 4)), vertex.size = 1, vertex.label = NA)
+hist(deg1, col=rgb(0,0,1,.4), xlim=c(0,20), xlab="degree", ylab="freq", 
+     main=paste0("T. AvgDeg=",round((1/n),2), "\n R. AvgDeg=", round(mean(deg1),2)))
+hist(deg2, col=rgb(1,0,0,.4), xlim=c(0,20), xlab="degree", ylab="freq", 
+     main=paste0("T. AvgDeg=",round(1/(n^.5),2), "\n R. AvgDeg=", round(mean(deg2),2)))
+hist(deg3, col=rgb(0,1,0,.4), xlim=c(0,20), xlab="degree", ylab="freq", 
+     main=paste0("T. AvgDeg=",(1), "\n R. AvgDeg=", round(mean(deg3),2)))
+hist(deg4, col=rgb(1,1,0,.4), xlim=c(0,20), xlab="degree", ylab="freq", 
+     main=paste0("T. AvgDeg=",round(log(n),2), "\n R. AvgDeg=", round(mean(deg4),2)))
+
+par(mfrow = c(1, 1))
+```
+
+En este tipo de redes el Clustering Coefficient = c / (n-1)
+
+```{r}
+er1 <- erdos.renyi.game(n, 0.05, type="gnp")
+deg1 <- degree(er1)
+
+#teórico
+mean(deg1) / (n-1)
+#calculado
+transitivity(er1)
+```
+
+Podemos encontrar un simulador de redes de este tipo en 
+<https://fperezgarcia.shinyapps.io/shinyApp/>
