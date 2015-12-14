@@ -578,7 +578,7 @@ nuevos nodos que se enlazan inicialmente a un nodo existente con una
 probabilidad proporcional a su grado.
 
 Visualizamos una evolución de la red cada 10 ciclos, los 3 primeros nodos se 
-ocolrean en rojo, para facilitar su localización:
+colorean en rojo, para facilitar su localización:
 
 ```{r fig.width=10}
 #Parametrización
@@ -641,10 +641,14 @@ este tipo de grafos:
 ```{r}
 initNodes <- 3
 g <- graph.full (n = initNodes, directed = FALSE, loops = FALSE)
-g4 <- barabasi.game(n = 100, m = 2, start.graph = g, 
+g4 <- barabasi.game(n = 200, m = 1, start.graph = g,
                     out.pref = TRUE, directed = FALSE)    
-
-plot(g4, vertex.label= NA, edge.arrow.size=0.02, vertex.size = 1, 
+deg <- degree(g4)
+plot(g4,
+     vertex.label= NA,
+     vertex.color = V(g4)$color,
+     edge.arrow.size=0.02,
+     vertex.size = 1+2*log(deg), 
      xlab = "Scale-free Network")
 ```
 
