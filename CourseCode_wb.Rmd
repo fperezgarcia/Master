@@ -1,14 +1,14 @@
 ---
-title: "Introduccion a la Teoria de Grafos"
+title: "Introducción a la Teoría de Grafos"
+author: Fernando Pérez (fperezgarciagm@gmail.com)
 output: html_document
 ---
 
 ### Inicialización
 A lo largo del siguiente curso utilizaremos fundamentalmente la librería iGraph 
-de R. <http://rmarkdown.rstudio.com>
+de R. <http://igraph.org/r/>
 ```{r}
 library(igraph)
-setwd("/Users/fernando_perez/Documents/workspace_R/Master_IBM/data")
 ````
 
 
