@@ -29,7 +29,7 @@ cities <- data.frame(name = c("Almería", "Granada", "Jaén", "Madrid", "Málaga
 
 relations <- data.frame(from = c("Almería", "Almería", "Granada", "Jaén",   "Jaén",   "Madrid"),
                         to   = c("Granada", "Murcia",  "Jaén",    "Madrid", "Málaga", "Murcia"),
-                        distance = c(92070, 237540, 115837, 3165000, 566913, 439712))
+                        distance = c(167, 217, 92, 332, 202, 399))
 
 g <- graph.data.frame(relations, directed=FALSE, vertices=cities)
 ```
@@ -66,7 +66,7 @@ write.graph(graph = g,file = "./graph.gml", format  = "gml")
 
 ## Crear un grafo a través de su matriz de adyacencia
 
-Podemos crear un grafo directamente a través de su matriz de adyancencia
+Podemos crear un grafo directamente a través de su matriz de adyacencia
 
 ```{r}
 dat <- read.csv("/Users/fernando_perez/Documents/workspace_R/Master_IBM/data/cities.csv", header=TRUE, row.names=1)
@@ -81,7 +81,7 @@ print(g)
 
 ***La operacion inversa***
 
-Podemos recumerar los nodos y enlaces de un grafo y convertirlos en data frames 
+Podemos recuperar los nodos y enlaces de un grafo y convertirlos en data frames 
 mediante
 
 ```{r}
@@ -150,7 +150,7 @@ g3 <- add.edges(g3,
 plot(g3)
 ````
 
-Obsérvese la diferencia entre las centralidades por Grado y Eigenvactor:
+Obsérvese la diferencia entre las centralidades por Grado y Eigenvector:
 
 ```{r}
 par(mfrow = c(1, 2))
@@ -573,7 +573,7 @@ plot(g, layout = layout.circle(g), vertex.size = 4, vertex.label = NA,
 Creamos una red con efecto *Preferential Attachment* a partir de un grafo 
 completo de 3 nodos
 
-Acontinuación iteramos 100 ciclos de forma que en cada ciclo se generan 2
+A continuación iteramos 100 ciclos de forma que en cada ciclo se generan 2
 nuevos nodos que se enlazan inicialmente a un nodo existente con una 
 probabilidad proporcional a su grado.
 

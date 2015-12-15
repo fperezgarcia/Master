@@ -10,7 +10,7 @@ cities <- data.frame(name = c("Almería", "Granada", "Jaén", "Madrid", "Málaga
 
 relations <- data.frame(from = c("Almería", "Almería", "Granada", "Jaén",   "Jaén",   "Madrid"),
                         to   = c("Granada", "Murcia",  "Jaén",    "Madrid", "Málaga", "Murcia"),
-                        distance = c(92070, 237540, 115837, 3165000, 566913, 439712))
+                        distance = c(167, 217, 92, 332, 202, 399))
 
 g <- graph.data.frame(relations, directed=FALSE, vertices=cities)
 print(g)
@@ -429,49 +429,15 @@ for (i in seq(1,numLoops)){
 par(mfrow = c(1, 1))
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-## Random networks
-
-g1 <- graph.ring(500)
-g2 <- erdos.renyi.game(500, 0.0035)
-g3 <- rewire.edges( g1, prob = 0.5 )
-g4 <- barabasi.game(500)    
-
-
-par(mfrow=c(2,2))
-plot(g1, vertex.label= NA, edge.arrow.size=0.02, vertex.size = 0.5, xlab = "Ring Network")
-plot(g2, vertex.label= NA, edge.arrow.size=0.02, vertex.size = 0.5, xlab = "Random Network")
-plot(g3, vertex.label= NA, edge.arrow.size=0.02, vertex.size = 0.5, xlab = "Small World Network")
-plot(g4, vertex.label= NA, edge.arrow.size=0.02, vertex.size = 0.5, xlab = "Scale-free Network")
-
-par(mfrow = c(1, 1))
-
-## Diametro y Camino medio
-
-g <- graph.ring(10)
-diameter(g)
-average.path.length(g)
-
-shortest.paths(g)
-
-
-g <- erdos.renyi.game(n=20,p=.12,directed = FALSE)
-plot(g)
-diameter(g)
-average.path.length(g)
-
-
+#Directamente con la función de R barabasi.game
+initNodes <- 3
+g <- graph.full (n = initNodes, directed = FALSE, loops = FALSE)
+g4 <- barabasi.game(n = 200, m = 1, start.graph = g,
+                    out.pref = TRUE, directed = FALSE)    
+deg <- degree(g4)
+plot(g4,
+     vertex.label= NA,
+     vertex.color = V(g4)$color,
+     edge.arrow.size=0.02,
+     vertex.size = 1+2*log(deg), 
+     xlab = "Scale-free Network")
