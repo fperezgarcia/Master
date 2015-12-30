@@ -1,0 +1,305 @@
+---
+title: "Visualización de Grafos"
+author: Fernando Pérez (fperezgarciagm@gmail.com)
+output: html_document
+---
+
+### Inicialización
+
+Actualizar la variable workingDir de acuerdo al directorio específico de cada 
+alumno.
+
+```{r}
+workingDir <- '/Users/fernando_perez/Documents/workspace_R/Master_IBM/data'
+````
+
+
+# 1. Visualización con igraph
+
+Cargamos como ejemplo para la visualización el grafo de Karate de Zackary.
+A lo largo de este módulo exploraremos las capacidades básicas para el ploteado 
+de grafos con igraph <http://igraph.org/r/doc/plot.common.html>  
+
+```{r}
+library(igraph)
+
+inputFile <- "./karate.graphml"
+g <- read.graph(file.path(workingDir, "karate.gml"), format = "gml")
+````
+
+Podemos hacer una visualización simple del grafo simplemente con plot:
+
+```{r}
+plot(g)
+```
+
+A partir de esta visualización, vamos a intentar mejorarla
+
+##a. Coloreado de los nodos por gradiente
+
+La siguiente función añade a los nodos de un grafo la propiedad ***color*** 
+como un gradiente de color dividido en N nivels (levels), en función de la 
+centralidad del nodo.
+
+```{r}
+library(RColorBrewer)
+
+colorGraph <- function (g, color = "degree", levels = 7, palette = "Blues"){
+  
+  switch(color,
+         degree = {
+           colIdx = cut(degree(g), levels, label=F)            
+         },
+         pagerank = {
+           colIdx = cut(page.rank(g)$vector, levels, label=F)
+         },
+         betweenness = {
+           colIdx = cut(betweenness(g), levels, label=F)
+         },
+         closeness = {
+           colIdx = cut(closeness(g), levels, label=F)
+         }
+  )
+  
+  V(g)$color = brewer.pal(levels, palette)[colIdx]
+  
+  g
+}
+```
+
+Aplicamos la función sobre la propiedad ***closeness*** de nuestro grafo, en 7 
+niveles y vemos el resultados
+
+```{r}
+g <- colorGraph(g,color = "closeness", levels = 7)
+
+plot(g,
+     vertex.label.family="sans", 
+     vertex.label.color="white",
+     vertex.label.cex=0.7,
+     vertex.color = V(g)$color)
+
+```
+
+##b. Variación del tamaño de los nodos
+
+Variamos el tamaño de los nodos en función de su centralidad por grado
+
+```{r}
+V(g)$degree <- degree(g)
+
+plot(g,vertex.label.family="sans", 
+     vertex.label.color="white",
+     vertex.label.cex=0.7,
+     vertex.color = V(g)$color,
+     vertex.size = 10 + V(g)$degree)
+```
+
+
+##c. Identificación de comunidades 
+
+igraph incorpora multitud de funciones para la detección de comunidades como  
+
+* fastgreedy.community  
+* spinglass.community  
+* leading.eigenvector.community  
+* edge.betweenness.community
+* walktrap.community  
+ 
+Todas ellas devuelven como resultado un objeto que contiene un vector 
+***membership*** donde se especifica la comunidad asignada a cada nodo.
+
+Aplicamos una función de detección de comunidades y coloreamos según el resutado 
+de la misma
+```{r}
+communities=leading.eigenvector.community(g)
+V(g)$membership <- communities$membership
+
+plot(g,
+     vertex.label.family="sans", 
+     vertex.label.color="white",
+     vertex.label.cex=0.7,
+     vertex.color = V(g)$membership)
+````
+
+##d. La disposición de los nodos. El "Layout".
+
+Mediante los algoritmo de Layout podemos variar la disposición de los nodos, 
+igraph contiene diferentes algoritmos de layout, cada uno de los cuales admite
+parametrizaciones específicas. A continuación vamos a ver los principales
+aplicados sobre un grafo de tipo **Preferential Attachment** con 200 nodos
+
+```{r}
+gPA <- graph.full(n = 3, directed = FALSE, loops = FALSE)
+gPA <- barabasi.game(n = 200, m = 1, start.graph = gPA,
+                    out.pref = TRUE, directed = FALSE)    
+
+colorCriteria <- "degree"
+gPA <- colorGraph(gPA, color = colorCriteria, levels = 9, palette = "Oranges")
+```
+
+```{r, echo=FALSE}
+l <- layout.circle(gPA)
+
+plot(gPA,
+     layout = l,
+     vertex.color = V(gPA)$color,
+     vertex.label = NA,
+     vertex.size = 4,
+     edge.color="gray",
+     main="Circle Layout")
+```
+
+```{r, echo=FALSE}
+l <- layout.fruchterman.reingold(gPA)
+
+plot(gPA,
+     layout = l,
+     vertex.color = V(gPA)$color,
+     vertex.label = NA,
+     vertex.size = 4,
+     edge.color="gray",
+     main="Fruchterman Reingold Layout")
+```
+
+```{r, echo=FALSE}
+l <- layout.kamada.kawai(gPA)
+
+plot(gPA,
+     layout = l,
+     vertex.color = V(gPA)$color,
+     vertex.label = NA,
+     vertex.size = 4,
+     edge.color="gray",
+     main="Kamada Kawai Layout")
+```
+
+```{r, echo=FALSE}
+l <- layout.reingold.tilford(gPA)
+
+plot(gPA,
+     layout = l,
+     vertex.color = V(gPA)$color,
+     vertex.label = NA,
+     vertex.size = 4,
+     edge.color="gray",
+     main="Reingold Tilford Layout")
+
+```
+
+### Función para resaltar las comunidades
+
+La siguiente función permite resaltar las comunidades, asignando mas peso a los 
+enlaces que conectan entre si nodos de la misma comunidad, para que ejerzan 
+mayor atracción y se visualicen más próximos
+
+```{r}
+communities <- leading.eigenvector.community(g)
+V(g)$membership <- communities$membership
+E(g)$weight <- c(10, 1)[crossing(communities, g) + 1]
+````
+
+Aplicamos la función sobre el grafo de Karate y observamos el efecto con 
+diferentes pesos 
+
+```{r}
+l=layout.fruchterman.reingold(g, weights=E(g)$weight)
+plot(g,
+     layout = l,
+     vertex.label.family="sans", 
+     vertex.label.color="white",
+     vertex.label.cex=0.7,
+     vertex.color = V(g)$membership,
+     main="Weight = 10, 1")
+
+E(g)$weight <- c(100, 1)[crossing(communities, g) + 1]
+
+l=layout.fruchterman.reingold(g, weights=E(g)$weight)
+plot(g,
+     layout = l,
+     vertex.label.family="sans", 
+     vertex.label.color="white",
+     vertex.label.cex=0.7,
+     vertex.color = V(g)$membership,
+     main="Weight = 1000, 1")
+```
+
+Finalmente aplicamos unos cuantos cambios para dar un aspecto mas atractivo a 
+nuestro grafo:
+
+```{r fig.height=8}
+E(g)$weight <- c(2000, 100)[crossing(communities, g) + 1]
+
+l=layout.fruchterman.reingold(g, weights = E(g)$weight, area = 10000)
+
+#Node Colors
+prettyColors <- c("antiquewhite3", "azure3", "chocolate3","darkolivegreen3")
+communityColors <- prettyColors[V(g)$membership]
+
+#Node Border Colors
+prettyColorsBorder <- c("antiquewhite4", "azure4", "chocolate4","darkolivegreen4")
+communityColorsBorder <- prettyColorsBorder[V(g)$membership]
+
+#Label Color
+prettyColorsFont <- c("black", "black", "lightgray", "white")
+communityColorsFont <- prettyColorsFont[V(g)$membership]
+
+#Identify Cross Community Edges
+#Se suma 1 para convertir (True, False) en (1, 2)
+edgeColors <- c("lightgray","black")[crossing(leading.eigenvector.community(g), g) + 1]
+
+plot(g,
+     layout = l,
+     vertex.color = communityColors,
+     vertex.frame.color = communityColorsBorder,
+     vertex.size = 10 + V(g)$degree,
+     edge.color = edgeColors,
+     vertex.label.family = "sans", 
+     vertex.label.color = communityColorsFont,
+     vertex.label.cex = 0.7,
+     main = "Zachary's Karate Club Network")
+```
+
+# 2. Visualización interactiva con Network D3
+
+Visualización sencilla con ***simpleNetwork***
+
+```{r}
+library(networkD3)
+source <- get.edgelist(g)[,1]
+target <- get.edgelist(g)[,2]
+
+networkData <- data.frame(source, target)
+networkData["value"] <- get.data.frame(g, what="edges")[,3]
+
+simpleNetwork(networkData)
+```
+
+Visualización un poco mas elaborada con ***forceNetwork***
+
+```{r fig.height=8}
+#Pasar el grafo a Data Frames y restar 1 a los identificadores de nodo, para que
+#empiecen en el 0, por exigencias de la funcion forceNEtwork
+dfVertex <- get.data.frame(g, what="vertices")
+colnames(dfVertex) <- c("name", "color", "degree", "group")
+dfVertex["name"] <- dfVertex$name - 1
+
+
+dfEdges  <- get.data.frame(g, what="edges")
+colnames(dfEdges) <- c("source", "target", "value")
+dfEdges["source"] <- dfEdges$source - 1
+dfEdges["target"] <- dfEdges$target - 1
+dfEdges["value"] <- ifelse(dfEdges$value > 100, 0.1,2)
+
+forceNetwork(Links = dfEdges, fontsize = 32, linkDistance = 30,
+             Nodes = dfVertex,
+             Source = "source", Target = "target",
+             Value = "value", NodeID = "name",
+             Group = "group", opacity = 0.8)
+
+
+## Se puede guardar en HTML con la siguiente secuencia de comandos
+#library(magrittr)
+#simpleNetwork(networkData) %>%
+#  saveNetwork(file = 'Net1.html')
+```

@@ -7,8 +7,13 @@ output: html_document
 ### Inicialización
 A lo largo del siguiente curso utilizaremos fundamentalmente la librería iGraph 
 de R. <http://igraph.org/r/>
+
+***NOTA:*** Actualizar la variable workingDir de acuerdo al directorio 
+específico de cada alumno.
+
 ```{r}
 library(igraph)
+workingDir <- '/Users/fernando_perez/Documents/workspace_R/Master_IBM/data'
 ````
 
 
@@ -69,7 +74,8 @@ write.graph(graph = g,file = "./graph.gml", format  = "gml")
 Podemos crear un grafo directamente a través de su matriz de adyacencia
 
 ```{r}
-dat <- read.csv("/Users/fernando_perez/Documents/workspace_R/Master_IBM/data/cities.csv", header=TRUE, row.names=1)
+getwd()
+dat <- read.csv(file.path(workingDir, "cities.csv"), header=TRUE, row.names=1)
 mat <- as.matrix(dat)
 
 mat
@@ -183,7 +189,7 @@ Seleccionar el autovector de la matriz de adyacencia con el mayor autovalor
 con todos sus elementos >0 o <0
 
 ```{r}
-dat <- read.csv("/Users/fernando_perez/Documents/workspace_R/Master_IBM/data/cities.csv", header=TRUE, row.names=1)
+dat <- read.csv(file.path(workingDir, "cities.csv"), header=TRUE, row.names=1)
 mat <- as.matrix(dat)
 
 eigen(mat)
