@@ -221,7 +221,7 @@ plot(g,
      vertex.label.color="white",
      vertex.label.cex=0.7,
      vertex.color = V(g)$membership,
-     main="Weight = 1000, 1")
+     main="Weight = 100, 1")
 ```
 
 Finalmente aplicamos unos cuantos cambios para dar un aspecto mas atractivo a 
@@ -245,7 +245,7 @@ prettyColorsFont <- c("black", "black", "lightgray", "white")
 communityColorsFont <- prettyColorsFont[V(g)$membership]
 
 #Identify Cross Community Edges
-#Se suma 1 para convertir (True, False) en (1, 2)
+#Se suma 1 para convertir (False, True) en (1, 2)
 edgeColors <- c("lightgray","black")[crossing(leading.eigenvector.community(g), g) + 1]
 
 plot(g,
@@ -289,14 +289,15 @@ dfEdges  <- get.data.frame(g, what="edges")
 colnames(dfEdges) <- c("source", "target", "value")
 dfEdges["source"] <- dfEdges$source - 1
 dfEdges["target"] <- dfEdges$target - 1
-dfEdges["value"] <- ifelse(dfEdges$value > 100, 0.1,2)
+dfEdges["edgeWidth"] <- ifelse(dfEdges$value > 100, 0.1,2)
 
-forceNetwork(Links = dfEdges, fontsize = 32, linkDistance = 30,
+forceNetwork(Links = dfEdges,
              Nodes = dfVertex,
              Source = "source", Target = "target",
-             Value = "value", NodeID = "name",
-             Group = "group", opacity = 0.8)
-
+             charge = -500,
+             Value = "edgeWidth", NodeID = "name",
+             Group = "group", opacity = 0.8,
+             fontsize = 32)
 
 ## Se puede guardar en HTML con la siguiente secuencia de comandos
 #library(magrittr)

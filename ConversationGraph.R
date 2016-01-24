@@ -82,7 +82,8 @@ plot(g2,
 ## El nodo tiene que pertenece a un grupo con el que se conecta por al
 ## menos 2 enlaces
 V(g2)$coreness <- graph.coreness(g2,mode = "all")
-g2=delete.vertices(g2,which(V(g2)$coreness<2))
+g2=delete.vertices(g2,which(V(g2)$coreness<2 &
+                              V(g2)$userLabel == ""))
 
 plot(g2,
      vertex.color=V(g2)$color,
