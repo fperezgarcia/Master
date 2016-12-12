@@ -10,8 +10,8 @@ Actualizar la variable workingDir de acuerdo al directorio específico de cada
 alumno.
 
 ```{r}
-workingDir <- '/Users/fernando_perez/Documents/workspace_R/Master_IBM/data'
-````
+workingDir <- '/Users/fernando_perez/Documents/workspace_R/Master_TG/data'
+```
 
 
 # 1. Visualización con igraph
@@ -22,6 +22,7 @@ de grafos con igraph <http://igraph.org/r/doc/plot.common.html>
 
 ```{r}
 library(igraph)
+library(networkD3)
 
 inputFile <- "./karate.graphml"
 g <- read.graph(file.path(workingDir, "karate.gml"), format = "gml")

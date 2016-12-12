@@ -24,7 +24,7 @@ plot(g, layout = layout.fruchterman.reingold,
 write.graph(graph = g,file = "./graph.gml", format = "gml")
 
 ## Adjacency Matrix
-setwd("/Users/fernando_perez/Documents/05 Fernando/Mis Docs/Master IBM/R")
+setwd("/Users/fernando_perez/Documents/05 Fernando/Mis Docs/Master Utad/R")
 dat <- read.csv("./cities.csv", header=TRUE, row.names=1)
 mat <- as.matrix(dat)
 
@@ -97,7 +97,7 @@ par(mfrow = c(1, 1))
 
 
 ##Eigenvectors
-setwd("/Users/fernando_perez/Documents/05 Fernando/Mis Docs/Master IBM/R")
+setwd("/Users/fernando_perez/Documents/05 Fernando/Mis Docs/Master Utad/R")
 dat <- read.csv("./cities.csv", header=TRUE, row.names=1)
 mat <- as.matrix(dat)
 
@@ -373,8 +373,8 @@ plot(g, layout = layout.circle(g), vertex.size = 4, vertex.label = NA,
 
 ## Barabasi - Albert
 initNodes <- 3
-g <- graph.full (n = initNodes, directed = FALSE, loops = FALSE)
-g4 <- barabasi.game(n = 100, m = 2, start.graph = g)    
+g <- graph.full (n = initNodes, directed = TRUE, loops = FALSE)
+g4 <- barabasi.game(n = 100, m = 2, start.graph = g, out.pref = TRUE)    
 
 plot(g4, vertex.label= NA, edge.arrow.size=0.02, vertex.size = 1, xlab = "Scale-free Network")
 
