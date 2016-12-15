@@ -1,6 +1,6 @@
 setwd("/Users/fernando_perez/Documents/05 Fernando/Mis Docs/Master Utad/R")
 relationships <- read.csv("./stormofswords.csv", header=TRUE)
-characters <- as.data.frame(unique(union(dat[,1], dat[,2])))
+characters <- as.data.frame(unique(union(relationships[,1], relationships[,2])))
 colnames(characters) <- c("Name")
 
 g <- graph.data.frame(relationships, directed=FALSE, vertices=characters)

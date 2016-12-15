@@ -3,6 +3,7 @@
 ##################################
 
 library(igraph)
+library(dplyr)
 library(ggplot2)
 ## Vertex & Edges
 cities <- data.frame(name = c("Almería", "Granada", "Jaén", "Madrid", "Málaga", "Murcia"),
@@ -29,14 +30,14 @@ dat <- read.csv("./cities.csv", header=TRUE, row.names=1)
 mat <- as.matrix(dat)
 
 g <- graph.adjacency(mat, mode="undirected", weighted = NULL)
-print(g)
+
 plot(g)
 g
 
 ## La operacion inversa
 mVert <- get.data.frame(g, what="vertices")
 mEdges <- get.data.frame(g, what="edges")
-
+arrange(mVert, (name))
 
 ## Caminos de longitud n entre 2 nodos
 mat2 <- mat %*% mat
@@ -57,6 +58,27 @@ plot(g)
 
 
 ## Eigen Centrality
+##Eigenvectors
+setwd("/Users/fernando_perez/Documents/05 Fernando/Mis Docs/Master Utad/R")
+dat <- read.csv("./cities.csv", header=TRUE, row.names=1)
+mat <- as.matrix(dat)
+
+maxEigenVal <- which.max(eigen(mat)$values)
+cent1 <- eigen(mat)$vectors[,maxEigenVal]
+
+g <- graph.adjacency(mat, mode="undirected", weighted = NULL)
+V(g)$evcent <- round(evcent(g)$vector,3)
+
+norm_vec <- function(x) sqrt(sum(x^2))
+normEv <- norm_vec(V(g)$evcent)
+V(g)$evcent / normEv
+
+plot(g, layout = layout.kamada.kawai, 
+     vertex.label = paste0(V(g)$name, ", ", V(g)$evcent),
+     vertex.label.family = "sans",
+     vertex.label.dist=1,
+     edge.color="black")
+
 #Creamos 2 estrellas
 g1 <- graph.star(n = 6, mode = "undirected")
 V(g1)$name <- (letters[1:6])
@@ -94,29 +116,6 @@ plot(g3, layout = l,
      edge.color="black")
 
 par(mfrow = c(1, 1))
-
-
-##Eigenvectors
-setwd("/Users/fernando_perez/Documents/05 Fernando/Mis Docs/Master Utad/R")
-dat <- read.csv("./cities.csv", header=TRUE, row.names=1)
-mat <- as.matrix(dat)
-
-maxEigenVal <- which.max(eigen(mat)$values)
-cent1 <- eigen(mat)$vectors[,maxEigenVal]
-
-g <- graph.adjacency(mat, mode="undirected", weighted = NULL)
-V(g)$evcent <- round(evcent(g)$vector,3)
-
-norm_vec <- function(x) sqrt(sum(x^2))
-normEv <- norm_vec(V(g)$evcent)
-V(g)$evcent / normEv
-
-plot(g, layout = layout.kamada.kawai, 
-     vertex.label = paste0(V(g)$name, ", ", V(g)$evcent),
-     vertex.label.family = "sans",
-     vertex.label.dist=1,
-     edge.color="black")
-
 
 ## Katz
 g <- graph( c(1,2,
@@ -241,29 +240,16 @@ hist(deg3, col=rgb(0,1,0,.4), xlim=c(0,20), xlab="degree", ylab="freq")
 
 par(mfrow = c(1, 1))
 
-## Power Law
+## Power Law)
 
-library("poweRlaw")
-
-n = 5000
+n = 100
 
 g1 <- barabasi.game(n)
 #g1 <- erdos.renyi.game(n, 0.10)
 deg1 <- degree(g1)
 
-par(mfrow = c(1, 2))
-
 #plot del histograma
-hist(deg1, main = "Histogram")
-
-#plot red aleatoria
-m = displ$new(deg1)
-plot(m, main = "Power Law", xlab = "degree", ylab = "freq")
-est = estimate_pars(m)
-m$setPars(est)
-lines(m, col=2, lwd=1)
-
-par(mfrow = c(1, 1))
+hist(deg1, main="Histogram", breaks = 20, col=rgb(0,0,1,.4), xlim=c(0,20), xlab="degree", ylab="freq")
 
 #Cálculo de los momentos de la distribución
 degVal <- seq(1, max(deg1), by = 1)
@@ -280,7 +266,7 @@ m_ord1 <- sum(freqDeg[,1] * freqDeg[,2])
 m_ord1
 weighted.mean(x = freqDeg[,1], w = freqDeg[,3])
 m_ord2 <- sum(freqDeg[,1]^2 * freqDeg[,2])
-sqrt(m_ord2)
+m_ord2
 weighted.mean(x = freqDeg[,1]^2, w = freqDeg[,3])
 m_ord3 <- sum(freqDeg[,1]^3 * freqDeg[,2])
 m_ord3
@@ -353,7 +339,8 @@ plot(g, layout = layout.circle(g), vertex.size = 5, vertex.label = NA,
                      "C. Coefficient:", transitivity(g)))
 
 rewProb <- 0.05
-g <- rewire.edges(g, prob = rewProb)
+#g <- rewire.edges(g, prob = rewProb)
+g <- rewire(g, each_edge(p = rewProb, loops = FALSE))
 plot(g, layout = layout.circle(g), vertex.size = 4, vertex.label = NA,
      main = paste0("Rewire Prob: ", rewProb),
      sub  = paste0("Shortest Path: ", mean(shortest.paths(g)), "\n",
@@ -372,7 +359,7 @@ plot(g, layout = layout.circle(g), vertex.size = 4, vertex.label = NA,
 
 
 ## Barabasi - Albert
-initNodes <- 3
+initNodes <- 4
 g <- graph.full (n = initNodes, directed = TRUE, loops = FALSE)
 g4 <- barabasi.game(n = 100, m = 2, start.graph = g, out.pref = TRUE)    
 
@@ -381,7 +368,7 @@ plot(g4, vertex.label= NA, edge.arrow.size=0.02, vertex.size = 1, xlab = "Scale-
 
 ## Barabasi - Albert - Manual
 #Parametrización
-initNodes <- 3
+initNodes <- 4
 newEdges <- 2
 numLoops <- 100
 
@@ -430,10 +417,16 @@ par(mfrow = c(1, 1))
 
 
 #Directamente con la función de R barabasi.game
-initNodes <- 3
+initNodes <- 4
 g <- graph.full (n = initNodes, directed = FALSE, loops = FALSE)
+
 g4 <- barabasi.game(n = 200, m = 1, start.graph = g,
                     out.pref = TRUE, directed = FALSE)    
+
+for (i in seq(1, length(V(g)))){
+  V(g4)[i]$color <- "red"
+}
+
 deg <- degree(g4)
 plot(g4,
      vertex.label= NA,

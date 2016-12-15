@@ -26,7 +26,7 @@ library(networkD3)
 
 inputFile <- "./karate.graphml"
 g <- read.graph(file.path(workingDir, "karate.gml"), format = "gml")
-````
+```
 
 Podemos hacer una visualización simple del grafo simplemente con plot:
 
@@ -121,7 +121,7 @@ plot(g,
      vertex.label.color="white",
      vertex.label.cex=0.7,
      vertex.color = V(g)$membership)
-````
+```
 
 ##d. La disposición de los nodos. El "Layout".
 
@@ -198,7 +198,7 @@ mayor atracción y se visualicen más próximos
 communities <- leading.eigenvector.community(g)
 V(g)$membership <- communities$membership
 E(g)$weight <- c(10, 1)[crossing(communities, g) + 1]
-````
+```
 
 Aplicamos la función sobre el grafo de Karate y observamos el efecto con 
 diferentes pesos 
@@ -292,13 +292,13 @@ dfEdges["source"] <- dfEdges$source - 1
 dfEdges["target"] <- dfEdges$target - 1
 dfEdges["edgeWidth"] <- ifelse(dfEdges$value > 100, 0.1,2)
 
-forceNetwork(Links = dfEdges,
-             Nodes = dfVertex,
-             Source = "source", Target = "target",
-             charge = -500,
-             Value = "edgeWidth", NodeID = "name",
-             Group = "group", opacity = 0.8,
-             fontsize = 32)
+#forceNetwork(Links = dfEdges,
+#             Nodes = dfVertex,
+#             Source = "source", Target = "target",
+#             charge = -500,
+#             Value = "edgeWidth", NodeID = "name",
+#             Group = "group", opacity = 0.8,
+#             fontsize = 32)
 
 ## Se puede guardar en HTML con la siguiente secuencia de comandos
 #library(magrittr)
